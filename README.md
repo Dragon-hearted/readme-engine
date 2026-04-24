@@ -149,7 +149,10 @@ readme-engine/
 │   │   └── system-readme.ts
 │   ├── types.ts
 │   └── update.ts
-└── tsconfig.json
+├── tsconfig.json
+└── vendor
+    └── design-system
+        └── tokens.css
 ```
 
 ---
