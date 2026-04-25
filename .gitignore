@@ -6,3 +6,7 @@ logs/
 .env
 .env.*
 dist/
+
+# Runtime state files — regenerated on each run
+.fingerprints.json
+.drift-flag
