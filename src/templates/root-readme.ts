@@ -6,7 +6,6 @@ import {
 	detectTechStack,
 	pathsToTree,
 	renderBadges,
-	renderChangelog,
 	renderProjectStructure,
 	renderTechStack,
 	renderToc,
@@ -63,7 +62,6 @@ export function rootReadme(data: RootTemplateData): ReadmeSection[] {
 		{ emoji: "📚", title: "Library" },
 		{ emoji: "🚀", title: "Getting Started" },
 		{ emoji: "📂", title: "Project Structure" },
-		{ emoji: "📝", title: "Recent Changes" },
 		{ emoji: "🤝", title: "Contributing" },
 		{ emoji: "📄", title: "License" },
 	];
@@ -207,16 +205,6 @@ export function rootReadme(data: RootTemplateData): ReadmeSection[] {
 		order: order++,
 		content: `## 📂 Project Structure\n\n${renderProjectStructure("adcelerate", rootTree)}`,
 	});
-
-	// --- Recent Changes ---
-	const changelogContent = renderChangelog(data.git);
-	if (changelogContent) {
-		sections.push({
-			name: "recent-changes",
-			order: order++,
-			content: `## 📝 Recent Changes\n\n${changelogContent}`,
-		});
-	}
 
 	// --- Contributing ---
 	sections.push({
