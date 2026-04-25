@@ -51,8 +51,20 @@ async function generateRoot(monorepoRoot: string): Promise<RenderedReadme> {
 
 	// Generate SVG assets before README so image references resolve
 	const svgs: SvgAsset[] = [
-		{ name: "hero", content: renderHeroSvg("Adcelerate", "AI-Powered Marketing & Media Platform", "#6366F1") },
-		{ name: "platform-overview", content: renderPlatformSvg(systems) },
+		{
+			name: "hero",
+			content: renderHeroSvg(
+				"Adcelerate",
+				"Open-source AI marketing and media platform — end-to-end pipelines for storyboard, image, caption, and reference workflows, orchestrated by Claude Code agents.",
+				"#6366F1",
+			),
+		},
+		{
+			name: "platform-overview",
+			content: renderPlatformSvg(systems, {
+				hubTagline: "AI marketing & media platform",
+			}),
+		},
 	];
 	await writeSvgAssets(monorepoRoot, { type: "root" }, svgs);
 

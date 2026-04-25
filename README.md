@@ -2,7 +2,7 @@
 
 ![ReadmeEngine](images/hero.svg)
 
-### Automated README generation and maintenance engine that produces best-in-class documentation for the monorepo, systems, and sub-projects using knowledge infrastructure
+### Drift-aware README generator for the monorepo
 
 ![Status](https://img.shields.io/badge/Status-active-brightgreen)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)

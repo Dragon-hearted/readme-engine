@@ -51,7 +51,7 @@ export function rootReadme(data: RootTemplateData): ReadmeSection[] {
 		name: "overview",
 		order: order++,
 		content:
-			"Adcelerate is a monorepo powering an AI-driven marketing and media platform. It houses multiple systems — from image generation studios to video pipelines — along with a rich library of skills, agents, and commands orchestrated through Claude Code.",
+			"Adcelerate is an open-source monorepo for AI-powered marketing and media work. It bundles seven independent systems — covering image generation, video storyboards, caption rendering, scraping, and a reusable prompt knowledge base — with a curated library of skills, agents, and commands orchestrated through Claude Code.",
 	});
 
 	// --- TOC ---
