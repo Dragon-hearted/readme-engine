@@ -12,20 +12,19 @@ import {
 	renderTechStack,
 	renderToc,
 } from "../renderers";
-import type { CodeData, GitData, GraphData, ReadmeSection, SystemData } from "../types";
+import type { CodeData, GraphData, ReadmeSection, SystemData } from "../types";
 import { centeredHero, svgHero, contributing, footer, license } from "./shared-sections";
 
 interface SystemTemplateData {
 	system: SystemData;
 	graph: GraphData;
-	git: GitData;
 	code: CodeData;
 	monorepoRoot: string;
 }
 
 /** Build a per-system README matching Pinboard visual quality */
 export async function systemReadme(data: SystemTemplateData): Promise<ReadmeSection[]> {
-	const { system, graph, git, code, monorepoRoot } = data;
+	const { system, graph, code, monorepoRoot } = data;
 	const sections: ReadmeSection[] = [];
 	let order = 0;
 

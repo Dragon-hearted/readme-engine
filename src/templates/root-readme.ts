@@ -12,7 +12,6 @@ import {
 } from "../renderers";
 import type {
 	CodeData,
-	GitData,
 	GraphData,
 	LibraryData,
 	ReadmeSection,
@@ -24,7 +23,6 @@ interface RootTemplateData {
 	systems: SystemData[];
 	graph: GraphData;
 	library: LibraryData;
-	git: GitData;
 	code: CodeData;
 }
 

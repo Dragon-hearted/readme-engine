@@ -2,7 +2,6 @@ import { resolve } from "node:path";
 import {
 	collectApps,
 	collectCode,
-	collectGit,
 	collectGraph,
 	collectLibrary,
 	collectSystems,
@@ -39,11 +38,10 @@ async function writeReadme(path: string, content: string): Promise<void> {
 async function generateRoot(monorepoRoot: string): Promise<RenderedReadme> {
 	console.log("[generate] Collecting data for root README...");
 
-	const [systems, graph, library, git, code] = await Promise.all([
+	const [systems, graph, library, code] = await Promise.all([
 		collectSystems(monorepoRoot),
 		collectGraph(monorepoRoot),
 		collectLibrary(monorepoRoot),
-		collectGit(monorepoRoot),
 		collectCode(monorepoRoot),
 	]);
 
@@ -68,7 +66,7 @@ async function generateRoot(monorepoRoot: string): Promise<RenderedReadme> {
 	];
 	await writeSvgAssets(monorepoRoot, { type: "root" }, svgs);
 
-	const sections = rootReadme({ systems, graph, library, git, code });
+	const sections = rootReadme({ systems, graph, library, code });
 	const fullContent = assembleSections(sections);
 
 	const outputPath = resolve(monorepoRoot, "README.md");
@@ -104,9 +102,8 @@ async function generateSystem(monorepoRoot: string, name: string): Promise<Rende
 
 	const systemPath = `${monorepoRoot}/${system.path}`;
 
-	const [graph, git, code] = await Promise.all([
+	const [graph, code] = await Promise.all([
 		collectGraph(monorepoRoot),
-		collectGit(monorepoRoot, [system.path]),
 		collectCode(monorepoRoot),
 	]);
 
@@ -124,7 +121,6 @@ async function generateSystem(monorepoRoot: string, name: string): Promise<Rende
 	const sections = await systemReadme({
 		system,
 		graph,
-		git,
 		code,
 		monorepoRoot,
 	});
