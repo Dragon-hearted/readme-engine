@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { collectApps, collectSystems } from "./collectors";
 import { detectDrift } from "./drift/detector";
 import { generate } from "./generate";
 import type { ReadmeScope, RenderedReadme } from "./types";
@@ -8,15 +9,35 @@ function resolveRoot(): string {
 	return resolve(import.meta.dir, "../../..");
 }
 
-/** Get the README path for a given scope */
-function readmePath(monorepoRoot: string, scope: ReadmeScope): string {
+/**
+ * Get the README path for a given scope.
+ *
+ * Resolves via the registry's `system.path` / `app.path` rather than assuming
+ * `systems/<name>` — name-keyed targets whose path basename differs from the
+ * scope name (e.g. `SceneBoard` → `systems/scene-board`) would otherwise point
+ * at a nonexistent file, making drift detection silently fall back to full
+ * generation. Mirrors the lookup `generate.ts` uses when writing the README.
+ */
+async function readmePath(monorepoRoot: string, scope: ReadmeScope): Promise<string> {
 	switch (scope.type) {
 		case "root":
 			return resolve(monorepoRoot, "README.md");
-		case "system":
-			return resolve(monorepoRoot, "systems", scope.name ?? "", "README.md");
-		case "app":
-			return resolve(monorepoRoot, "apps", scope.name ?? "", "README.md");
+		case "system": {
+			const name = scope.name ?? "";
+			const systems = await collectSystems(monorepoRoot);
+			const system = systems.find(
+				(s) => s.name.toLowerCase() === name.toLowerCase() || s.path.endsWith(`/${name}`),
+			);
+			const relPath = system ? system.path : `systems/${name}`;
+			return resolve(monorepoRoot, relPath, "README.md");
+		}
+		case "app": {
+			const name = scope.name ?? "";
+			const apps = await collectApps(monorepoRoot);
+			const app = apps.find((a) => a.name === name || a.path.endsWith(`/${name}`));
+			const relPath = app ? app.path : `apps/${name}`;
+			return resolve(monorepoRoot, relPath, "README.md");
+		}
 	}
 }
 
@@ -36,7 +57,7 @@ async function readmeExists(path: string): Promise<boolean> {
  */
 export async function update(scope: ReadmeScope): Promise<RenderedReadme> {
 	const monorepoRoot = resolveRoot();
-	const targetPath = readmePath(monorepoRoot, scope);
+	const targetPath = await readmePath(monorepoRoot, scope);
 	const scopeLabel = scope.name ? `${scope.type}:${scope.name}` : scope.type;
 
 	console.log(`[update] Checking drift for ${scopeLabel}...`);
