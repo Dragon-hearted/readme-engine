@@ -45,11 +45,18 @@ export function rootReadme(data: RootTemplateData): ReadmeSection[] {
 	});
 
 	// --- Overview ---
+	const countWords = [
+		"zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+		"nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+		"sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+	];
+	const systemCount = data.systems.length;
+	const systemCountWord = countWords[systemCount] ?? String(systemCount);
 	sections.push({
 		name: "overview",
 		order: order++,
 		content:
-			"Adcelerate is an open-source monorepo for AI-powered marketing and media work. It bundles seven independent systems — covering image generation, video storyboards, caption rendering, scraping, and a reusable prompt knowledge base — with a curated library of skills, agents, and commands orchestrated through Claude Code.",
+			`Adcelerate is an open-source monorepo for AI-powered marketing and media work. It bundles ${systemCountWord} independent systems — covering image generation, video storyboards, caption rendering, scraping, and a reusable prompt knowledge base — with a curated library of skills, agents, and commands orchestrated through Claude Code.`,
 	});
 
 	// --- TOC ---
