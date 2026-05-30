@@ -12,6 +12,8 @@ const KNOWLEDGE_SOURCES: Record<string, string[]> = {
 	systems: ["systems.yaml"],
 	library: ["library.yaml"],
 	graph: ["knowledge/graph.yaml"],
+	// Platform-level rich usage knowledge feeding Features/Usage/Configuration.
+	usage: ["knowledge/usage.yaml"],
 };
 
 /** Stored fingerprint map: key = "scope:section", value = SectionFingerprint */
@@ -128,6 +130,13 @@ async function getSourceFilesForScope(scope: ReadmeScope): Promise<Record<string
 		sections.knowledge = knowledgeFiles;
 		sections.config = [pkgPath, resolve(PROJECT_ROOT, "systems.yaml")];
 		sections.graph = resolveSourcePaths(["knowledge/graph.yaml"]);
+		// Track usage.yaml explicitly so drift is flagged even when the file is
+		// created later (readdir above only finds files that already exist).
+		const usagePath = resolve(knowledgeDir, "usage.yaml");
+		sections.usage = [usagePath];
+		if (!knowledgeFiles.includes(usagePath)) {
+			sections.knowledge = [...knowledgeFiles, usagePath];
+		}
 	} else if (scope.type === "app" && scope.name) {
 		const appDir = resolve(PROJECT_ROOT, "apps", scope.name);
 		sections.config = [resolve(appDir, "package.json")];

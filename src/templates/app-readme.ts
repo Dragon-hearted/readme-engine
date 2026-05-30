@@ -7,7 +7,7 @@ import {
 	renderToc,
 } from "../renderers";
 import type { AppData, CodeData, ReadmeSection } from "../types";
-import { centeredHero, svgHero, contributing, footer, license } from "./shared-sections";
+import { centeredHero, contributing, footer, license, svgHero } from "./shared-sections";
 
 interface AppTemplateData {
 	app: AppData;
