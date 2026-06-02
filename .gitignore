@@ -10,3 +10,6 @@ dist/
 # Runtime state files — regenerated on each run
 .fingerprints.json
 .drift-flag
+
+# Claude Code session/runtime data
+.claude/
