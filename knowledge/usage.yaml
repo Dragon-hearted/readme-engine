@@ -1,0 +1,83 @@
+# systems/readme-engine/knowledge/usage.yaml
+# Verified by recon-readme-engine on 2026-05-30 (bun v1.3.6) against
+# systems/readme-engine/src/** at HEAD. Every "VERIFIED" step below was
+# actually executed; commands that would overwrite files owned by other
+# in-flight tasks are listed but marked "not executed".
+
+features:
+  - name: "Three commands: generate / detect / update"
+    description: "`generate` builds README.md from knowledge sources; `detect` reports drift as a console table + JSON; `update` is drift-aware and only re-generates when stale/unknown sections exist (no-op otherwise)."
+  - name: "Four target scopes"
+    description: "`--target root` (monorepo README), `system:<name>` (one system, resolved by name or path basename), `app:<name>` (one app under apps/), and `all` (root + every system + every app)."
+  - name: "System collector"
+    description: "Reads systems.yaml plus each system's knowledge/index.md (## Summary) or domain.md fallback and package.json to build name, description, status, stages, task/input/output types, domain tags, and entry point."
+  - name: "Graph collector"
+    description: "Parses knowledge/graph.yaml for dependency topology + relationships, and graphify-out/GRAPH_REPORT.md for god nodes and communities, feeding the root architecture/dependency section."
+  - name: "Library collector"
+    description: "Reads library.yaml and returns skill / agent / command counts plus the top 10 skills and agents for the root README's Library catalog."
+  - name: "Code collector"
+    description: "Collects entry_point values from systems.yaml and walks systems/*/src to a depth of 3 to build source trees and directory lists."
+  - name: "App collector"
+    description: "Scans apps/*/package.json and builds a 2-level source tree per app (apps are out of scope for this rewrite but the collector still runs under `--target all`)."
+  - name: "Drift detection with SHA-256 fingerprints"
+    description: "Per section, hashes each knowledge source file (Bun CryptoHasher) and combines them into a composite hash stored in .fingerprints.json; compares stored vs current to mark each section current / stale / unknown."
+  - name: "Drift report"
+    description: "Prints a per-section report with ✅ current, ⚠️ stale, ❓ unknown icons plus actionable recommendations, and (for `detect`) emits the full report as JSON to stdout."
+  - name: "Markdown renderers"
+    description: "Composable renderers for badges, table of contents, tech-stack detection, project-structure trees, API reference (parses Hono routes under */routes/*), mermaid/dependency graphs, changelog, and GIF demo references."
+  - name: "SVG asset generation"
+    description: "Generates and writes SVG art into the scope's images/ dir before the README so references resolve: hero.svg always, pipeline.svg when the system declares stages, and platform-overview.svg for the root scope."
+  - name: "Graceful degradation"
+    description: "Every collector wraps file reads in try/catch and warns instead of failing, so a missing systems.yaml / graph.yaml / library.yaml / knowledge file degrades the affected section rather than aborting generation."
+
+prerequisites:
+  - "[**Bun**](https://bun.sh/) v1.0+ — `curl -fsSL https://bun.sh/install | bash` (verified with bun 1.3.6)"
+  - "[**just**](https://github.com/casey/just) (optional) — runs the justfile recipes (dev / test / build / lint / check)"
+  - "Run from within the Adcelerate monorepo — the engine resolves the repo root as `../../..` relative to its own src/ and reads systems.yaml, library.yaml, and knowledge/graph.yaml from there."
+
+install:
+  - "cd systems/readme-engine"
+  - "bun install"
+
+usageSteps:
+  - title: "List commands, scopes, and examples"
+    command: "bun run src/cli.ts --help"
+    expected: "Prints the ReadmeEngine usage banner: commands (generate|detect|update) and targets (root|system:<name>|app:<name>|all). VERIFIED."
+  - title: "Detect drift for the root README"
+    command: "bun run src/cli.ts detect --target root"
+    expected: "Prints a drift report (overview/architecture/systems/library/graph/apps) with ✅/⚠️/❓ icons + recommendations, then the same report as JSON. VERIFIED — reported `overview` and `library` stale (library.yaml had local edits)."
+  - title: "Detect drift for a single system"
+    command: "bun run src/cli.ts detect --target system:readme-engine"
+    expected: "Reports the per-system sections (knowledge, config, graph) as current/stale/unknown. VERIFIED — all three current immediately after a generate."
+  - title: "Generate a system README"
+    command: "bun run src/cli.ts generate --target system:readme-engine"
+    expected: "Writes systems/readme-engine/README.md, regenerates images/hero.svg + images/pipeline.svg, and saves 3 drift fingerprints. VERIFIED — '11 sections, 3701 chars'. (Overwriting the system's own README is the expected workflow.)"
+  - title: "Generate the root README"
+    command: "bun run src/cli.ts generate --target root"
+    expected: "Collects systems + graph + library + code, writes /README.md plus images/hero.svg and images/platform-overview.svg. Not executed during recon — overwrites the root README owned by the regeneration task; behavior confirmed by reading generate.ts."
+  - title: "Drift-aware selective update"
+    command: "bun run src/cli.ts update --target system:readme-engine"
+    expected: "Runs drift detection; if all sections are current it prints 'no update needed' and leaves the file untouched, otherwise it re-generates the full README. Behavior confirmed by reading update.ts."
+  - title: "Generate everything in one pass"
+    command: "bun run src/cli.ts generate --target all"
+    expected: "Generates root + every registered system + every app README. Not executed during recon — also rewrites out-of-scope apps/* READMEs; behavior confirmed by reading generate.ts (generateAll)."
+
+commandsReference:
+  - command: "bun run src/cli.ts --help"
+    description: "Print usage: commands and target scopes."
+  - command: "bun run src/cli.ts generate --target <root|system:NAME|app:NAME|all>"
+    description: "Generate README.md (and SVG assets) for the target scope and save drift fingerprints."
+  - command: "bun run src/cli.ts detect --target <root|system:NAME|app:NAME|all>"
+    description: "Detect drift between knowledge sources and existing READMEs; prints a report + JSON."
+  - command: "bun run src/cli.ts update --target <root|system:NAME|app:NAME|all>"
+    description: "Re-generate only when drift is detected; otherwise leave the README unchanged."
+  - command: "bun run dev"
+    description: "Watch-mode run of src/index.ts (package.json script; also `just dev`)."
+  - command: "bun run build"
+    description: "Bundle src/index.ts to dist/ targeting Bun (package.json script; also `just build`)."
+  - command: "bun test"
+    description: "Run the test suite (package.json script; also `just test`)."
+  - command: "bun run lint"
+    description: "Lint with Biome (`bunx @biomejs/biome check .`; also `just lint`)."
+  - command: "bun run check"
+    description: "Biome check + autofix formatting (`bunx @biomejs/biome check --write .`; also `just check`)."

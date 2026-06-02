@@ -5,6 +5,7 @@ import {
 	collectGraph,
 	collectLibrary,
 	collectSystems,
+	collectUsage,
 } from "./collectors";
 import { fingerprintKey, generateFingerprints, loadFingerprints, saveFingerprints } from "./drift";
 import { renderHeroSvg, renderPipelineSvg, renderPlatformSvg } from "./renderers/svg";
@@ -38,11 +39,12 @@ async function writeReadme(path: string, content: string): Promise<void> {
 async function generateRoot(monorepoRoot: string): Promise<RenderedReadme> {
 	console.log("[generate] Collecting data for root README...");
 
-	const [systems, graph, library, code] = await Promise.all([
+	const [systems, graph, library, code, usage] = await Promise.all([
 		collectSystems(monorepoRoot),
 		collectGraph(monorepoRoot),
 		collectLibrary(monorepoRoot),
 		collectCode(monorepoRoot),
+		collectUsage(`${monorepoRoot}/knowledge/usage.yaml`),
 	]);
 
 	console.log(`[generate] Collected: ${systems.length} systems, ${library.skillCount} skills`);
@@ -66,7 +68,7 @@ async function generateRoot(monorepoRoot: string): Promise<RenderedReadme> {
 	];
 	await writeSvgAssets(monorepoRoot, { type: "root" }, svgs);
 
-	const sections = rootReadme({ systems, graph, library, code });
+	const sections = rootReadme({ systems, graph, library, code, usage });
 	const fullContent = assembleSections(sections);
 
 	const outputPath = resolve(monorepoRoot, "README.md");
@@ -102,10 +104,7 @@ async function generateSystem(monorepoRoot: string, name: string): Promise<Rende
 
 	const systemPath = `${monorepoRoot}/${system.path}`;
 
-	const [graph, code] = await Promise.all([
-		collectGraph(monorepoRoot),
-		collectCode(monorepoRoot),
-	]);
+	const [graph, code] = await Promise.all([collectGraph(monorepoRoot), collectCode(monorepoRoot)]);
 
 	// Generate SVG assets before README so image references resolve
 	const firstSentence = extractFirstSentence(system.description);

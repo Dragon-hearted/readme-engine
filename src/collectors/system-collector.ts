@@ -1,5 +1,6 @@
 import yaml from "js-yaml";
 import type { SystemData } from "../types";
+import { collectUsage } from "./usage-collector";
 
 interface SystemYamlEntry {
 	name?: string;
@@ -68,6 +69,9 @@ export async function collectSystems(monorepoRoot: string): Promise<SystemData[]
 
 		const stages = (entry.stages || []).map((s) => s.name);
 
+		// Read rich usage knowledge (graceful empty default when absent)
+		const usage = await collectUsage(`${knowledgePath}/usage.yaml`);
+
 		results.push({
 			name: entry.name || id,
 			description: entry.description || "",
@@ -82,6 +86,7 @@ export async function collectSystems(monorepoRoot: string): Promise<SystemData[]
 			entryPoint: entry.entry_point || "",
 			knowledgeSummary,
 			packageJson,
+			usage,
 		});
 	}
 

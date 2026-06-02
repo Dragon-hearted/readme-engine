@@ -6,14 +6,18 @@ import {
 	renderApiReference,
 	renderArchitecture,
 	renderBadges,
+	renderConfigSection,
+	renderFeaturesSection,
+	renderGettingStartedSection,
 	renderGifReferences,
 	renderProjectStructure,
 	renderScopeChangelog,
 	renderTechStack,
 	renderToc,
+	renderUsageSection,
 } from "../renderers";
 import type { CodeData, GraphData, ReadmeSection, SystemData } from "../types";
-import { centeredHero, svgHero, contributing, footer, license } from "./shared-sections";
+import { centeredHero, contributing, footer, license, svgHero } from "./shared-sections";
 
 interface SystemTemplateData {
 	system: SystemData;
@@ -27,6 +31,15 @@ export async function systemReadme(data: SystemTemplateData): Promise<ReadmeSect
 	const { system, graph, code, monorepoRoot } = data;
 	const sections: ReadmeSection[] = [];
 	let order = 0;
+
+	// Rich usage knowledge (empty defaults when knowledge/usage.yaml is absent)
+	const usage = system.usage;
+	const hasFeatures = (usage?.features.length ?? 0) > 0;
+	const hasGettingStarted =
+		(usage?.prerequisites.length ?? 0) > 0 || (usage?.install.length ?? 0) > 0;
+	const hasUsage =
+		(usage?.usageSteps.length ?? 0) > 0 || (usage?.commandsReference.length ?? 0) > 0;
+	const hasConfig = (usage?.configVars.length ?? 0) > 0;
 
 	// Merge sub-package deps for systems with server/client layout
 	const mergedPkg = await mergeSubPackages(system, monorepoRoot);
@@ -55,32 +68,22 @@ export async function systemReadme(data: SystemTemplateData): Promise<ReadmeSect
 		});
 	}
 
-	// --- Build TOC entries based on which sections will exist ---
-	const tocEntries: TocEntry[] = [];
-	tocEntries.push({ emoji: "✨", title: "Features" });
-	tocEntries.push({ emoji: "🏗", title: "Architecture" });
-	tocEntries.push({ emoji: "🛠", title: "Tech Stack" });
-	tocEntries.push({ emoji: "🚀", title: "Getting Started" });
-	tocEntries.push({ emoji: "💻", title: "Development" });
-
-	// Check if API reference will exist
-	const hasApi = await detectApiRoutes(systemPath);
-	if (hasApi) {
-		tocEntries.push({ emoji: "📡", title: "API Reference" });
-	}
-
-	tocEntries.push({ emoji: "📂", title: "Project Structure" });
-	tocEntries.push({ emoji: "🤝", title: "Contributing" });
-	tocEntries.push({ emoji: "📄", title: "License" });
-
-	sections.push({
-		name: "toc",
-		order: order++,
-		content: `## 📑 Table of Contents\n\n${renderToc(tocEntries)}`,
-	});
+	// --- Reserve the TOC slot ---
+	// The TOC entries are DERIVED from the section headings actually emitted
+	// (see the end of this function), so the list can never drift from the real
+	// sections — no dead links, no duplicates, always in emitted order.
+	const tocOrder = order++;
 
 	// --- Features ---
-	if (system.taskTypes.length > 0 || system.inputTypes.length > 0) {
+	// Prefer the rich, recon-authored feature list from usage.yaml; fall back to
+	// the generic task-type/input/output dump when no usage knowledge exists.
+	if (hasFeatures && usage) {
+		sections.push({
+			name: "features",
+			order: order++,
+			content: renderFeaturesSection(usage.features),
+		});
+	} else if (system.taskTypes.length > 0 || system.inputTypes.length > 0) {
 		const featureRows: string[] = [];
 
 		for (const task of system.taskTypes) {
@@ -150,30 +153,58 @@ export async function systemReadme(data: SystemTemplateData): Promise<ReadmeSect
 	}
 
 	// --- Getting Started ---
-	sections.push({
-		name: "getting-started",
-		order: order++,
-		content: [
-			"## 🚀 Getting Started",
-			"",
-			"### Prerequisites",
-			"",
-			"- [**Bun**](https://bun.sh/) v1.0+ — `curl -fsSL https://bun.sh/install | bash`",
-			"",
-			"### Install",
-			"",
-			"```bash",
-			`cd ${system.path}`,
-			"bun install",
-			"```",
-			"",
-			"### Run",
-			"",
-			"```bash",
-			system.entryPoint ? `bun run ${system.entryPoint}` : "bun run dev",
-			"```",
-		].join("\n"),
-	});
+	// Use recon-verified prerequisites/install when available; otherwise keep the
+	// deterministic fallback (Prerequisites + Install + Run).
+	if (hasGettingStarted && usage) {
+		sections.push({
+			name: "getting-started",
+			order: order++,
+			content: renderGettingStartedSection(usage.prerequisites, usage.install),
+		});
+	} else {
+		sections.push({
+			name: "getting-started",
+			order: order++,
+			content: [
+				"## 🚀 Getting Started",
+				"",
+				"### Prerequisites",
+				"",
+				"- [**Bun**](https://bun.sh/) v1.0+ — `curl -fsSL https://bun.sh/install | bash`",
+				"",
+				"### Install",
+				"",
+				"```bash",
+				`cd ${system.path}`,
+				"bun install",
+				"```",
+				"",
+				"### Run",
+				"",
+				"```bash",
+				system.entryPoint ? `bun run ${system.entryPoint}` : "bun run dev",
+				"```",
+			].join("\n"),
+		});
+	}
+
+	// --- Usage / Step-by-Step (only when recon authored verified steps) ---
+	if (hasUsage && usage) {
+		sections.push({
+			name: "usage",
+			order: order++,
+			content: renderUsageSection(usage.usageSteps, usage.commandsReference),
+		});
+	}
+
+	// --- Configuration (only when env/config vars are documented) ---
+	if (hasConfig && usage) {
+		sections.push({
+			name: "configuration",
+			order: order++,
+			content: renderConfigSection(usage.configVars),
+		});
+	}
 
 	// --- Development ---
 	sections.push({
@@ -192,7 +223,9 @@ export async function systemReadme(data: SystemTemplateData): Promise<ReadmeSect
 	});
 
 	// --- API Reference ---
-	if (hasApi) {
+	// (Only emitted when route files exist AND yield parseable endpoints; the
+	// TOC entry is derived from this section's presence, so they can't mismatch.)
+	if (await detectApiRoutes(systemPath)) {
 		const apiContent = await buildApiReference(systemPath);
 		if (apiContent) {
 			sections.push({
@@ -235,7 +268,34 @@ export async function systemReadme(data: SystemTemplateData): Promise<ReadmeSect
 		content: footer(`🧡 **using ${techNames}**`),
 	});
 
+	// --- Derive the TOC from the sections actually emitted ---
+	// Scan every content section that follows the reserved TOC slot, pull its
+	// leading `## ` heading, and build one TOC entry per real heading. This makes
+	// the TOC a 1:1 reflection of the document: no dead links, no duplicates,
+	// exactly the emitted order. (Sections without an H2 — e.g. the footer — are
+	// skipped.)
+	const tocEntries: TocEntry[] = sections
+		.filter((s) => s.order > tocOrder)
+		.sort((a, b) => a.order - b.order)
+		.map((s) => firstH2Heading(s.content))
+		.filter((heading): heading is string => heading !== null)
+		.map((heading) => ({ emoji: "", title: heading }));
+
+	sections.push({
+		name: "toc",
+		order: tocOrder,
+		content: `## 📑 Table of Contents\n\n${renderToc(tocEntries)}`,
+	});
+
 	return sections;
+}
+
+/** Return the text after the first `## ` (H2) heading line, or null if none. */
+function firstH2Heading(content: string): string | null {
+	for (const line of content.split("\n")) {
+		if (line.startsWith("## ")) return line.slice(3).trim();
+	}
+	return null;
 }
 
 /** Pick an emoji based on domain tags */
@@ -371,10 +431,10 @@ async function mergeSubPackages(
 async function buildSystemTree(systemPath: string): Promise<string | null> {
 	try {
 		// Prefer git ls-files: respects .gitignore, works for both submodules and standalone repos
-		const gitProc = Bun.spawn(
-			["git", "-C", systemPath, "ls-files", "--", "."],
-			{ stdout: "pipe", stderr: "pipe" },
-		);
+		const gitProc = Bun.spawn(["git", "-C", systemPath, "ls-files", "--", "."], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
 		const gitOutput = await new Response(gitProc.stdout).text();
 		const gitExitCode = await gitProc.exited;
 

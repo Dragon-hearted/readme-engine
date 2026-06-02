@@ -7,6 +7,46 @@ export interface ReadmeScope {
 	name?: string;
 }
 
+/** A single rich feature (name + description) from usage.yaml */
+export interface UsageFeature {
+	name: string;
+	description: string;
+}
+
+/** An environment/configuration variable from usage.yaml */
+export interface UsageConfigVar {
+	name: string;
+	required: boolean;
+	description: string;
+}
+
+/** An ordered, verified usage step (command + expected result) */
+export interface UsageStep {
+	title: string;
+	command: string;
+	expected: string;
+}
+
+/** An optional command-reference row */
+export interface UsageCommandRef {
+	command: string;
+	description: string;
+}
+
+/**
+ * Structured usage knowledge read from `knowledge/usage.yaml` for a scope.
+ * All fields are optional in the source; the collector normalizes missing
+ * sections to empty arrays so renderers can emit only the sections with data.
+ */
+export interface UsageData {
+	features: UsageFeature[];
+	prerequisites: string[];
+	configVars: UsageConfigVar[];
+	install: string[];
+	usageSteps: UsageStep[];
+	commandsReference: UsageCommandRef[];
+}
+
 /** Collected data about a registered system */
 export interface SystemData {
 	name: string;
@@ -22,6 +62,8 @@ export interface SystemData {
 	entryPoint: string;
 	knowledgeSummary: string;
 	packageJson: Record<string, unknown> | null;
+	/** Rich usage knowledge from knowledge/usage.yaml (empty when absent) */
+	usage?: UsageData;
 }
 
 /** Collected data from the knowledge graph */
@@ -93,8 +135,8 @@ export interface ReadmeSection {
 
 /** An SVG asset to be written to disk */
 export interface SvgAsset {
-  name: string;
-  content: string;
+	name: string;
+	content: string;
 }
 
 /** A fully rendered README */

@@ -7,4 +7,16 @@ export { renderProjectStructure, pathsToTree, type TreeEntry } from "./project-s
 export { parseRoutes, renderApiReference, type ApiEndpoint } from "./api-reference";
 export { renderChangelog, renderScopeChangelog } from "./changelog";
 export { renderGifReferences } from "./gif-references";
-export { renderHeroSvg, renderPipelineSvg, renderPlatformSvg, domainTagToColor, glowFilterDefs } from "./svg";
+export {
+	renderHeroSvg,
+	renderPipelineSvg,
+	renderPlatformSvg,
+	domainTagToColor,
+	glowFilterDefs,
+} from "./svg";
+export {
+	renderFeaturesSection,
+	renderGettingStartedSection,
+	renderUsageSection,
+	renderConfigSection,
+} from "./usage";

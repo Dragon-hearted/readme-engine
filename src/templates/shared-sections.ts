@@ -3,6 +3,15 @@
  * Produces HTML/markdown matching Pinboard visual quality.
  */
 
+// Re-export the usage-knowledge renderers so root + system templates can pull
+// Features / Getting Started / Usage / Configuration from one shared surface.
+export {
+	renderFeaturesSection,
+	renderGettingStartedSection,
+	renderUsageSection,
+	renderConfigSection,
+} from "../renderers/usage";
+
 /** Centered hero header with h1, tagline, and badge row */
 export function centeredHero(name: string, tagline: string, badges: string): string {
 	const lines: string[] = ['<div align="center">', ""];
@@ -40,17 +49,17 @@ Contributions are welcome! Here's how to get started:
 
 /** SVG-based hero that references an external SVG file */
 export function svgHero(name: string, tagline: string, badges: string): string {
-	const lines: string[] = ['<div align="center">', ''];
+	const lines: string[] = ['<div align="center">', ""];
 	lines.push(`![${name}](images/hero.svg)`);
-	lines.push('');
+	lines.push("");
 	lines.push(`### ${tagline}`);
-	lines.push('');
+	lines.push("");
 	if (badges) {
 		lines.push(badges);
-		lines.push('');
+		lines.push("");
 	}
-	lines.push('</div>');
-	return lines.join('\n');
+	lines.push("</div>");
+	return lines.join("\n");
 }
 
 /** MIT license section */
